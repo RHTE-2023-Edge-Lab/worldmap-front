@@ -1,4 +1,4 @@
-# ship-map Project
+# worldmap-front Project
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
