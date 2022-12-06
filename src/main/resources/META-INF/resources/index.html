@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Shipment Map</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.AnimatedMarker/1.0.0/AnimatedMarker.min.js" crossorigin=""></script>
+        <style>
+            #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+            img.leaflet-marker-icon[src="parcel.png"] {
+                margin-top: -15px;
+                margin-left: -15px;
+                width: 30px;
+                height: 31px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script type="application/javascript">
+            var map = L.map('map').setView([49.422281, 13.2372604], 5);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var warehouses = JSON.parse(xhttp.response);
+                    console.log(warehouses);
+                    warehouses.forEach((w) => {
+                        var circle = L.circle([w.latitude, w.longitude], {
+                            color: 'red',
+                            fillColor: '#f03',
+                            fillOpacity: 0.5,
+                            radius: 50000
+                        }).addTo(map);
+                    });
+                }
+            };
+            xhttp.open("GET", "/api/warehouses", true);
+            xhttp.send();
+
+            var parcelIcon = L.icon({
+                iconUrl: 'parcel.png'
+            });
+
+            var line = L.polyline([[48.8317, 2.3558],[49.2021611,16.507921],[44.4379269,26.0245979]]),
+            animatedMarker = L.animatedMarker(line.getLatLngs(), {
+              icon: parcelIcon
+            });
+            map.addLayer(animatedMarker);
+
+        </script>
+        </body>
+</html>
