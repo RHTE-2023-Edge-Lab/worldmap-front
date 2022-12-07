@@ -20,6 +20,8 @@
         <div id="map"></div>
         <script type="application/javascript">
             var map = L.map('map').setView([49.422281, 13.2372604], 5);
+            var warehouses = {}; // Map to store warehouses, indexed by their code
+
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -28,9 +30,10 @@
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
-                    var warehouses = JSON.parse(xhttp.response);
-                    console.log(warehouses);
-                    warehouses.forEach((w) => {
+                    var warehousesList = JSON.parse(xhttp.response);
+                    console.log(warehousesList);
+                    warehousesList.forEach((w) => {
+                        warehouses[w.code] = w;
                         var circle = L.circle([w.latitude, w.longitude], {
                             color: 'red',
                             fillColor: '#f03',
@@ -47,12 +50,27 @@
                 iconUrl: 'parcel.png'
             });
 
-            var line = L.polyline([[48.8317, 2.3558],[49.2021611,16.507921],[44.4379269,26.0245979]]),
-            animatedMarker = L.animatedMarker(line.getLatLngs(), {
-              icon: parcelIcon
-            });
-            map.addLayer(animatedMarker);
-
+            var source = new EventSource('/api/shipments');
+            source.onopen = function() {
+                console.log('connection to stream has been opened');
+            };
+            source.onerror = function (error) {
+                console.log('An error has occurred while receiving stream', error);
+            };
+            source.onmessage = function (stream) {
+                //console.log(stream.data);
+                var data = JSON.parse(stream.data);
+                var origin = data.origin;
+                var destination = data.destination;
+                var line = L.polyline([[warehouses[origin].latitude, warehouses[origin].longitude],[warehouses[destination].latitude, warehouses[destination].longitude]]);
+                var animatedMarker = L.animatedMarker(line.getLatLngs(), {
+                    icon: parcelIcon,
+                    onEnd: function() {
+                        setTimeout(() => { map.removeLayer(animatedMarker); }, 500);
+                    }
+                });
+                map.addLayer(animatedMarker);
+            };
         </script>
         </body>
 </html>
