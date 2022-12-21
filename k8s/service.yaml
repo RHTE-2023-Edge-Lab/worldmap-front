@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: worldmap-front
+  labels:
+    name: worldmap-front
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    name: worldmap-front

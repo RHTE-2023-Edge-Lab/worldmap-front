@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worldmap-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: worldmap-front
+  template:
+    metadata:
+      labels:
+        name: worldmap-front
+    spec:
+      containers:
+      - name: worldmap-front
+        image: quay.io/rhte2023edgelab/worldmap-front:latest
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: headquarter-kafka-bootstrap:9092
+        - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_SECURITY_PROTOCOL
+          value: SASL_PLAINTEXT
+        - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_SASL_MECHANISM
+          value: SCRAM-SHA-512
+        - name: MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_SASL_JAAS_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: worldmap-front
+              key: sasl.jaas.config
+        - name: MP_MESSAGING_INCOMING_SHIPMENTS_TOPIC
+          value: headquarter-shipment-records
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /q/health/ready
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 20
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /q/health/live
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 20
+      terminationGracePeriodSeconds: 30

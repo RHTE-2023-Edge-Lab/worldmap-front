@@ -1,0 +1,23 @@
+kind: Secret
+apiVersion: v1
+metadata:
+  name: worldmap-front
+stringData:
+  password: s3cr3t
+  sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username='worldmap-front' password='s3cr3t';
+type: Opaque
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: worldmap-front
+  labels:
+    strimzi.io/cluster: headquarter
+spec:
+  authentication:
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: worldmap-front
+          key: password
+    type: scram-sha-512

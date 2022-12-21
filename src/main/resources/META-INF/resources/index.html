@@ -14,11 +14,27 @@
                 width: 30px;
                 height: 31px;
             }
+            img.leaflet-marker-icon[src="warehouse.png"] {
+                margin-top: -27px;
+                margin-left: -32px;
+                width: 64px;
+                height: 54px;
+            }
         </style>
     </head>
     <body>
         <div id="map"></div>
         <script type="application/javascript">
+            function distance(move) {
+                // convert degrees to radians
+                var lat1 = move[0][0] * Math.PI / 180;
+                var lat2 = move[1][0] * Math.PI / 180;
+                var long1 = move[0][1] * Math.PI / 180;
+                var long2 = move[1][1] * Math.PI / 180;
+
+                return 6371 * Math.acos((Math.sin(lat1) * Math.sin(lat2)) + Math.cos(lat1) * Math.cos(lat2) * Math.cos(long2 - long1));
+            }
+
             var map = L.map('map').setView([49.422281, 13.2372604], 5);
             var warehouses = {}; // Map to store warehouses, indexed by their code
 
@@ -27,6 +43,10 @@
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);
 
+            var warehouseIcon = L.icon({
+                iconUrl: 'warehouse.png'
+            });
+
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
@@ -34,11 +54,8 @@
                     console.log(warehousesList);
                     warehousesList.forEach((w) => {
                         warehouses[w.code] = w;
-                        var circle = L.circle([w.latitude, w.longitude], {
-                            color: 'red',
-                            fillColor: '#f03',
-                            fillOpacity: 0.5,
-                            radius: 50000
+                        var circle = L.marker([w.latitude, w.longitude], {
+                            icon: warehouseIcon
                         }).addTo(map);
                     });
                 }
@@ -60,11 +77,16 @@
             source.onmessage = function (stream) {
                 //console.log(stream.data);
                 var data = JSON.parse(stream.data);
-                var origin = data.origin;
-                var destination = data.destination;
-                var line = L.polyline([[warehouses[origin].latitude, warehouses[origin].longitude],[warehouses[destination].latitude, warehouses[destination].longitude]]);
+                var origin = data.from;
+                var destination = data.to;
+                var move = [[warehouses[origin].latitude, warehouses[origin].longitude],[warehouses[destination].latitude, warehouses[destination].longitude]];
+                var d = distance(move);
+                //console.log("From %s to %s is %s km", origin, destination, d);
+                var line = L.polyline(move);
                 var animatedMarker = L.animatedMarker(line.getLatLngs(), {
                     icon: parcelIcon,
+                    distance: d * 1000,  // meters
+                    interval: d,         // 1 milliseconds per km
                     onEnd: function() {
                         setTimeout(() => { map.removeLayer(animatedMarker); }, 500);
                     }
