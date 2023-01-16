@@ -77,6 +77,7 @@
             source.onmessage = function (stream) {
                 //console.log(stream.data);
                 var data = JSON.parse(stream.data);
+                var id = data.parcelNumber;
                 var origin = data.from;
                 var destination = data.to;
                 var move = [[warehouses[origin].latitude, warehouses[origin].longitude],[warehouses[destination].latitude, warehouses[destination].longitude]];
@@ -90,7 +91,10 @@
                     onEnd: function() {
                         setTimeout(() => { map.removeLayer(animatedMarker); }, 500);
                     }
-                });
+                })
+                .addTo(map)
+                .bindPopup("<br>Museum of New Zealand.")
+                .openPopup();
                 map.addLayer(animatedMarker);
             };
         </script>
